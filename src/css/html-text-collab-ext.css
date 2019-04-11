@@ -1,7 +1,6 @@
 div.text-collab-ext {
   position: absolute;
   pointer-events: none;
-  overflow: hidden;
 }
 
 div.text-collab-ext div.text-collab-ext-scroller {

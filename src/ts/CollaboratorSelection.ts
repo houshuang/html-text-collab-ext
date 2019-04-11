@@ -1,6 +1,6 @@
-import {ISelectionRange} from "./ISelectionRange";
-import {ISelectionRow} from "./ISelectionRow";
-import {SelectionComputer} from "./SelectionComputer";
+import { ISelectionRange } from "./ISelectionRange";
+import { ISelectionRow } from "./ISelectionRow";
+import { SelectionComputer } from "./SelectionComputer";
 
 // @ts-ignore
 import getCaretCoordinates from "textarea-caret";
@@ -22,7 +22,7 @@ export class CollaboratorSelection {
   private readonly _container: HTMLDivElement;
 
   private _color: string;
-  private _selection: ISelectionRange| null;
+  private _selection: ISelectionRange | null;
   private _cursor: number | null;
   private _label: string;
   private readonly _margin: number;
@@ -33,7 +33,8 @@ export class CollaboratorSelection {
     overlayContainer: HTMLDivElement,
     color: string,
     label: string,
-    options: ICollaboratorSelectionOptions) {
+    options: ICollaboratorSelectionOptions
+  ) {
     this._label = label;
     this._textInput = textInput;
     this._color = color;
@@ -63,9 +64,15 @@ export class CollaboratorSelection {
   }
 
   public showSelection(): void {
-    this._rows.forEach(row => {
-      row.element.style.visibility = "visible";
-    });
+    console.log("show selection");
+    const cursorCoords = getCaretCoordinates(this._textInput, this._cursor);
+    console.log(cursorCoords.left, this._container.offsetWidth);
+    if (cursorCoords.left < this._container.offsetWidth) {
+      console.log("yes");
+      this._rows.forEach(row => {
+        row.element.style.visibility = "visible";
+      });
+    }
   }
 
   public hideSelection(): void {
@@ -75,6 +82,15 @@ export class CollaboratorSelection {
   }
 
   public showCursor(): void {
+    console.log("show cursor");
+    const cursorCoords = getCaretCoordinates(this._textInput, this._cursor);
+    console.log(cursorCoords.left, this._container.offsetWidth);
+    if (cursorCoords.left < this._container.offsetWidth) {
+      console.log("yes");
+      this._rows.forEach(row => {
+        row.element.style.visibility = "visible";
+      });
+    }
     this._cursorElement.style.visibility = "visible";
   }
 
@@ -90,7 +106,10 @@ export class CollaboratorSelection {
   public flashCursorToolTip(duration: number): void {
     this.showCursorToolTip();
     this._clearToolTipTimeout();
-    this._tooltipTimeout = setTimeout(() => this.hideCursorTooltip(), duration * 1000);
+    this._tooltipTimeout = setTimeout(
+      () => this.hideCursorTooltip(),
+      duration * 1000
+    );
   }
 
   public hideCursorTooltip(): void {
@@ -121,14 +140,14 @@ export class CollaboratorSelection {
       this._selection = null;
     } else {
       this._cursor = selection.target;
-      this._selection = {...selection};
+      this._selection = { ...selection };
     }
 
     this.refresh();
   }
 
   public getSelection(): ISelectionRange {
-    return {...this._selection}
+    return { ...this._selection };
   }
 
   public clearSelection(): void {
@@ -141,20 +160,33 @@ export class CollaboratorSelection {
   }
 
   private _updateCursor(): void {
-    if (this._cursor === null && this._container.contains(this._cursorElement)) {
+    const cursorCoords = getCaretCoordinates(this._textInput, this._cursor);
+    console.log(cursorCoords.left, this._container.offsetWidth);
+    if (cursorCoords.left > this._container.offsetWidth) {
+      console.log("hide");
+      this.hideCursorTooltip();
+      this.hideSelection();
+      return;
+    }
+
+    if (
+      this._cursor === null &&
+      this._container.contains(this._cursorElement)
+    ) {
+      console.log("remove");
       this._container.removeChild(this._cursorElement);
       this._container.removeChild(this._tooltipElement);
     } else {
       if (!this._cursorElement.parentElement) {
+        console.log("add");
         this._container.append(this._cursorElement);
         this._container.append(this._tooltipElement);
       }
 
-      const cursorCoords = getCaretCoordinates(this._textInput, this._cursor);
-
       this._cursorElement.style.height = cursorCoords.height + "px";
       this._cursorElement.style.top = cursorCoords.top + "px";
-      const cursorLeft = (cursorCoords.left - this._cursorElement.offsetWidth / 2);
+      const cursorLeft =
+        cursorCoords.left - this._cursorElement.offsetWidth / 2;
       this._cursorElement.style.left = cursorLeft + "px";
 
       let toolTipTop = cursorCoords.top - this._tooltipElement.offsetHeight;
@@ -163,8 +195,14 @@ export class CollaboratorSelection {
       }
 
       let toolTipLeft = cursorLeft;
-      if (toolTipLeft + this._tooltipElement.offsetWidth > this._container.offsetWidth - this._margin) {
-        toolTipLeft = cursorLeft + this._cursorElement.offsetWidth - this._tooltipElement.offsetWidth;
+      if (
+        toolTipLeft + this._tooltipElement.offsetWidth >
+        this._container.offsetWidth - this._margin
+      ) {
+        toolTipLeft =
+          cursorLeft +
+          this._cursorElement.offsetWidth -
+          this._tooltipElement.offsetWidth;
       }
 
       this._tooltipElement.style.top = toolTipTop + "px";
@@ -174,10 +212,11 @@ export class CollaboratorSelection {
 
   private _updateSelection(): void {
     if (this._selection === null) {
-      this._rows.forEach(row => row.element.parentElement.removeChild(row.element));
+      this._rows.forEach(row =>
+        row.element.parentElement.removeChild(row.element)
+      );
       this._rows.splice(0, this._rows.length);
     } else {
-
       let start;
       let end;
 
@@ -189,13 +228,20 @@ export class CollaboratorSelection {
         end = Number(this._selection.target);
       }
 
-      const newRows = SelectionComputer.calculateSelection(this._textInput, start, end);
+      const newRows = SelectionComputer.calculateSelection(
+        this._textInput,
+        start,
+        end
+      );
 
       // Adjust size of rows as needed
       const delta = newRows.length - this._rows.length;
 
       if (delta > 0) {
-        if (this._rows.length === 0 || this._rowsEqual(newRows[0], this._rows[0].rowData)) {
+        if (
+          this._rows.length === 0 ||
+          this._rowsEqual(newRows[0], this._rows[0].rowData)
+        ) {
           this._addNewRows(delta, true);
         } else {
           this._addNewRows(delta, false);
@@ -204,12 +250,17 @@ export class CollaboratorSelection {
         let removed = null;
         if (this._rowsEqual(newRows[0], this._rows[0].rowData)) {
           // Take from the target.
-          removed = this._rows.splice(this._rows.length - 1 + delta, delta * -1);
+          removed = this._rows.splice(
+            this._rows.length - 1 + delta,
+            delta * -1
+          );
         } else {
           removed = this._rows.splice(0, delta * -1);
         }
 
-        removed.forEach(row => row.element.parentElement.removeChild(row.element));
+        removed.forEach(row =>
+          row.element.parentElement.removeChild(row.element)
+        );
       }
 
       // Now compare each row and see if we need an update.
@@ -227,7 +278,7 @@ export class CollaboratorSelection {
       element.style.backgroundColor = this._color;
       element.style.opacity = "0.25";
       this._container.append(element);
-      const rowData = {height: 0, width: 0, top: 0, left: 0};
+      const rowData = { height: 0, width: 0, top: 0, left: 0 };
       const newRow: ISelectionData = {
         element,
         rowData
@@ -242,10 +293,12 @@ export class CollaboratorSelection {
   }
 
   private _rowsEqual(a: ISelectionRow, b: ISelectionRow): boolean {
-    return a.height === b.height &&
+    return (
+      a.height === b.height &&
       a.width === b.width &&
       a.top === b.top &&
-      a.left === b.left;
+      a.left === b.left
+    );
   }
 
   private _updateRow(newRowData: ISelectionRow, row: ISelectionData): void {

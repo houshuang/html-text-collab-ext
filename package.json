@@ -27,9 +27,9 @@
     "clean": "gulp clean",
     "start": "lite-server"
   },
-  "main": "lib/index.js",
-  "module": "es6/index.js",
-  "typings": "typings/index.ts",
+  "main": "dist/lib/index.js",
+  "module": "dist/es6/index.js",
+  "typings": "dist/typings/index.ts",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
