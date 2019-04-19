@@ -65,7 +65,14 @@ export class CollaboratorSelection {
 
   public showSelection(): void {
     console.log("show selection");
-    const cursorCoords = getCaretCoordinates(this._textInput, this._cursor);
+    console.log(
+      getCaretCoordinates(this._textInput, this._cursor),
+      this._cursor,
+      this._selection
+    );
+    const cursorCoords = getCaretCoordinates(this._textInput, this._cursor, {
+      debug: true
+    });
     console.log(cursorCoords.left, this._container.offsetWidth);
     if (cursorCoords.left < this._container.offsetWidth) {
       console.log("yes");
@@ -160,12 +167,22 @@ export class CollaboratorSelection {
   }
 
   private _updateCursor(): void {
-    const cursorCoords = getCaretCoordinates(this._textInput, this._cursor);
-    console.log(cursorCoords.left, this._container.offsetWidth);
+    const cursorCoords = getCaretCoordinates(
+      this._textInput,
+      this._cursor,
+      this._selection
+    );
+    console.log(
+      "updating cursor",
+      cursorCoords.left,
+      this._cursor,
+      this._container.offsetWidth
+    );
     if (cursorCoords.left > this._container.offsetWidth) {
-      console.log("hide");
-      this.hideCursorTooltip();
-      this.hideSelection();
+      if (this._container.contains(this._cursorElement)) {
+        this._container.removeChild(this._cursorElement);
+        this._container.removeChild(this._tooltipElement);
+      }
       return;
     }
 
@@ -173,12 +190,10 @@ export class CollaboratorSelection {
       this._cursor === null &&
       this._container.contains(this._cursorElement)
     ) {
-      console.log("remove");
       this._container.removeChild(this._cursorElement);
       this._container.removeChild(this._tooltipElement);
     } else {
       if (!this._cursorElement.parentElement) {
-        console.log("add");
         this._container.append(this._cursorElement);
         this._container.append(this._tooltipElement);
       }
@@ -188,6 +203,7 @@ export class CollaboratorSelection {
       const cursorLeft =
         cursorCoords.left - this._cursorElement.offsetWidth / 2;
       this._cursorElement.style.left = cursorLeft + "px";
+      console.log("cursorleft", cursorLeft);
 
       let toolTipTop = cursorCoords.top - this._tooltipElement.offsetHeight;
       if (toolTipTop + this._container.offsetTop < this._margin) {
@@ -195,15 +211,6 @@ export class CollaboratorSelection {
       }
 
       let toolTipLeft = cursorLeft;
-      if (
-        toolTipLeft + this._tooltipElement.offsetWidth >
-        this._container.offsetWidth - this._margin
-      ) {
-        toolTipLeft =
-          cursorLeft +
-          this._cursorElement.offsetWidth -
-          this._tooltipElement.offsetWidth;
-      }
 
       this._tooltipElement.style.top = toolTipTop + "px";
       this._tooltipElement.style.left = toolTipLeft + "px";

@@ -1,6 +1,7 @@
-import {ISelectionRange} from "./ISelectionRange";
-import {CollaboratorSelection} from "./CollaboratorSelection";
-import {IndexUtils} from "./IndexUtils";
+import { ISelectionRange } from "./ISelectionRange";
+import { CollaboratorSelection } from "./CollaboratorSelection";
+import { IndexUtils } from "./IndexUtils";
+import {debounce}from 'lodash'
 
 export type ISelectionCallback = (selection: ISelectionRange) => void;
 
@@ -35,7 +36,9 @@ export class CollaborativeSelectionManager {
     this._selectionAnchor = this._textElement.selectionStart;
     this._selectionTarget = this._textElement.selectionEnd;
 
-    this._overlayContainer = this._textElement.ownerDocument.createElement("div");
+    this._overlayContainer = this._textElement.ownerDocument.createElement(
+      "div"
+    );
     this._overlayContainer.className = "text-collab-ext";
     this._textElement.parentElement.append(this._overlayContainer);
 
@@ -55,6 +58,10 @@ export class CollaborativeSelectionManager {
       this._checkResize();
     });
 
+    const debouncedCheckResize = debounce(this._checkResize, 20);
+
+    window.addEventListener("resize", debouncedCheckResize);
+
     this._textElement.addEventListener("scroll", () => this._updateScroller());
 
     this._textElement.addEventListener("keydown", this._checkSelection);
@@ -65,12 +72,25 @@ export class CollaborativeSelectionManager {
     this._updateOverlay();
   }
 
-  public addCollaborator(id: string, label: string, color: string, selection?: ISelectionRange): CollaboratorSelection {
+  public addCollaborator(
+    id: string,
+    label: string,
+    color: string,
+    selection?: ISelectionRange
+  ): CollaboratorSelection {
     if (this._collaborators.has(id)) {
-      throw new Error(`A collaborator with the specified id already exists: ${id}`);
+      throw new Error(
+        `A collaborator with the specified id already exists: ${id}`
+      );
     }
 
-    const collaborator = new CollaboratorSelection(this._textElement, this._scroller, color, label, {margin: 5});
+    const collaborator = new CollaboratorSelection(
+      this._textElement,
+      this._scroller,
+      color,
+      label,
+      { margin: 5 }
+    );
     this._collaborators.set(id, collaborator);
 
     if (selection !== undefined && selection !== null) {
@@ -114,26 +134,43 @@ export class CollaborativeSelectionManager {
   }
 
   public updateSelectionsOnInsert(index: number, value: string): void {
-    this._collaborators.forEach((collaborator) => {
+    this._collaborators.forEach(collaborator => {
       const selection = collaborator.getSelection();
-      const anchor = IndexUtils.transformIndexOnInsert(selection.anchor, index, value);
-      const target = IndexUtils.transformIndexOnInsert(selection.target, index, value);
-      collaborator.setSelection({anchor, target});
+      const anchor = IndexUtils.transformIndexOnInsert(
+        selection.anchor,
+        index,
+        value
+      );
+      const target = IndexUtils.transformIndexOnInsert(
+        selection.target,
+        index,
+        value
+      );
+      collaborator.setSelection({ anchor, target });
     });
   }
 
   public updateSelectionsOnDelete(index: number, length: number): void {
-    this._collaborators.forEach((collaborator) => {
+    this._collaborators.forEach(collaborator => {
       const selection = collaborator.getSelection();
-      const anchor = IndexUtils.transformIndexOnDelete(selection.anchor, index, length);
-      const target = IndexUtils.transformIndexOnDelete(selection.target, index, length);
-      collaborator.setSelection({anchor, target});
+      const anchor = IndexUtils.transformIndexOnDelete(
+        selection.anchor,
+        index,
+        length
+      );
+      const target = IndexUtils.transformIndexOnDelete(
+        selection.target,
+        index,
+        length
+      );
+      collaborator.setSelection({ anchor, target });
     });
   }
 
   private _checkSelection = () => {
     setTimeout(() => {
-      const changed = this._textElement.selectionStart !== this._selectionAnchor ||
+      const changed =
+        this._textElement.selectionStart !== this._selectionAnchor ||
         this._textElement.selectionEnd !== this._selectionTarget;
       if (changed) {
         if (this._selectionAnchor === this._textElement.selectionStart) {
@@ -150,20 +187,24 @@ export class CollaborativeSelectionManager {
         });
       }
     }, 0);
-  }
+  };
 
   private _onMouseMove = () => {
     this._checkResize();
     this._checkSelection();
-  }
+  };
 
   private _checkResize = () => {
-    if (this._textElement.offsetWidth !== this._overlayContainer.offsetWidth ||
-      this._textElement.offsetHeight !== this._overlayContainer.offsetHeight) {
+    if (
+      this._textElement.offsetWidth !== this._overlayContainer.offsetWidth ||
+      this._textElement.offsetHeight !== this._overlayContainer.offsetHeight ||
+      this._textElement.offsetTop !== this._overlayContainer.offsetTop ||
+      this._textElement.offsetLeft !== this._overlayContainer.offsetLeft
+    ) {
       this._updateOverlay();
       this._collaborators.forEach(renderer => renderer.refresh());
     }
-  }
+  };
 
   private _updateOverlay(): void {
     const top = this._textElement.offsetTop;
@@ -178,7 +219,7 @@ export class CollaborativeSelectionManager {
   }
 
   private _updateScroller(): void {
-    this._scroller.style.top = (this._textElement.scrollTop * -1) + "px";
-    this._scroller.style.left = (this._textElement.scrollLeft * -1) + "px";
+    this._scroller.style.top = this._textElement.scrollTop * -1 + "px";
+    this._scroller.style.left = this._textElement.scrollLeft * -1 + "px";
   }
 }
